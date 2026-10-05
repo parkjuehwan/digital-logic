@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="#1f1f1f"/>
+  <!-- 7-Segment 숫자 "0" 모양 -->
+  <g fill="#ef4444">
+    <rect x="10" y="5" width="12" height="3" rx="1.5"/>
+    <rect x="21" y="7" width="3" height="8.5" rx="1.5"/>
+    <rect x="21" y="16.5" width="3" height="8.5" rx="1.5"/>
+    <rect x="10" y="24" width="12" height="3" rx="1.5"/>
+    <rect x="8" y="16.5" width="3" height="8.5" rx="1.5"/>
+    <rect x="8" y="7" width="3" height="8.5" rx="1.5"/>
+  </g>
+</svg>

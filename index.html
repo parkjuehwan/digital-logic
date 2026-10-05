@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Digital Logic from Zero — 논리 게이트부터 7-Segment Counter까지</title>
+  <meta name="description" content="디지털 신호, 이진수, 논리 게이트, Flip-Flop, Counter, BCD, Decoder를 거쳐 0~9 반복 7-Segment Counter를 만드는 인터랙티브 입문 교재">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ======================================================
+       왼쪽 사이드바
+       메뉴 항목은 main.js가 아래 <section data-group data-title>들을 읽어서
+       자동으로 만듭니다. (챕터를 추가하면 메뉴도 자동으로 생깁니다)
+       ====================================================== -->
+  <aside class="sidebar" id="sidebar" aria-label="챕터 목록">
+    <div class="sidebar-header">
+      <a class="sidebar-logo" href="#intro">
+        <span class="sidebar-logo-mark">01</span>
+        <span class="sidebar-logo-text">
+          Digital Logic from Zero
+          <span class="sidebar-logo-sub">논리 게이트부터 7-Segment Counter까지</span>
+        </span>
+      </a>
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer">HTML · CSS · Vanilla JS</div>
+  </aside>
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+  <div class="main">
+    <!-- 상단바: 모바일 메뉴 버튼 + 현재 위치(breadcrumb) -->
+    <header class="topbar">
+      <button class="menu-button" id="menu-button" aria-label="메뉴 열기" aria-controls="sidebar" aria-expanded="false"><span></span></button>
+      <div class="breadcrumb" id="breadcrumb">Digital Logic</div>
+    </header>
+
+    <main class="content">
+
+      <!-- ====================================================
+           INTRO
+           ==================================================== -->
+      <section class="intro" id="intro" data-group="시작하기" data-title="최종 목표 보기" data-num="00">
+        <h1>Digital Logic from Zero</h1>
+        <p class="subtitle">논리 게이트부터 7-Segment Counter까지</p>
+
+        <p class="lead">
+          이 교재는 디지털 논리회로를 처음 배우는 사람을 위해 만들어졌습니다.
+          AND, OR, Flip-Flop을 하나씩 외우는 대신, <strong>처음부터 하나의 완성품을 목표로</strong> 정해 두고
+          거기에 필요한 개념을 차례대로 쌓아 갑니다.
+        </p>
+
+        <h3 style="margin-top:36px">우리가 최종적으로 만들 회로</h3>
+        <p>1초마다 숫자가 하나씩 올라가는 <strong>0~9 반복 카운터</strong>입니다. 전자시계, 엘리베이터 층 표시, 전자레인지 타이머에 들어 있는 것과 같은 원리입니다.</p>
+
+        <div class="figure">
+          <div class="intro-goal">
+            <div class="block-flow">
+              <a class="block-link" href="#ch13"><div class="block">Clock<small>일정한 박자를 만든다</small></div></a>
+              <div class="flow-arrow"></div>
+              <a class="block-link" href="#ch9"><div class="block">MOD-10 Counter<small>박자마다 숫자를 1 올린다 (0~9)</small></div></a>
+              <div class="flow-arrow"><span class="flow-label">BCD 4bit</span></div>
+              <a class="block-link" href="#ch12"><div class="block">BCD → 7-Segment Decoder<small>4bit를 a~g 7개 신호로 바꾼다</small></div></a>
+              <div class="flow-arrow"><span class="flow-label">a b c d e f g</span></div>
+              <a class="block-link" href="#ch11"><div class="block accent">7-Segment Display<small>숫자를 눈에 보이게 표시한다</small></div></a>
+            </div>
+            <div class="intro-preview">
+              <div class="seven-seg size-md" data-seven-seg id="intro-seg"></div>
+              <span>완성품 미리보기</span>
+              <span class="mono" id="intro-preview-bcd">BCD 0000</span>
+            </div>
+          </div>
+          <div style="margin-top:26px">
+            <div class="digit-loop" id="intro-loop"></div>
+            <p class="digit-loop-caption">9 다음에는 다시 0으로 — 이 순환이 영원히 반복됩니다.</p>
+          </div>
+        </div>
+
+        <h3>이 회로를 만들려면 무엇을 알아야 할까?</h3>
+        <p>위 블록 하나하나가 이 교재의 챕터가 됩니다. 아래 순서는 "앞의 개념이 없으면 뒤의 개념을 만들 수 없는" 순서입니다.</p>
+        <div class="roadmap">
+          <a href="#ch1">전압</a><i>→</i>
+          <a href="#ch1">0 / 1</a><i>→</i>
+          <a href="#ch2">Binary</a><i>→</i>
+          <a href="#ch3">Boolean Logic</a><i>→</i>
+          <a href="#ch4">Logic Gate</a><i>→</i>
+          <a href="#ch6">Latch</a><i>→</i>
+          <a href="#ch7">Flip-Flop</a><i>→</i>
+          <a href="#ch8">Counter</a><i>→</i>
+          <a href="#ch9">MOD-10 Counter</a><i>→</i>
+          <a href="#ch10">BCD</a><i>→</i>
+          <a href="#ch12">Decoder</a><i>→</i>
+          <a href="#ch11">7-Segment</a>
+        </div>
+
+        <div class="why-box">
+          <strong>이 교재를 읽는 방법</strong>
+          각 챕터 끝에는 <em>"최종 회로와 연결"</em> 상자가 있습니다. 지금 배우는 개념이 위 블록 다이어그램의
+          어느 부분이 되는지 항상 확인하세요. 마지막 챕터에서 모든 조각이 하나로 합쳐집니다.
+        </div>
+
+        <div class="start-row">
+          <a class="btn primary big" href="#ch1">시작하기 →</a>
+          <a class="btn big" href="#ch14">완성품 먼저 만져보기</a>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           Chapter 1. 디지털 신호
+           ==================================================== -->
+      <section class="chapter" id="ch1" data-group="기초" data-title="디지털 신호와 0 / 1" data-num="01">
+        <p class="chapter-label">CHAPTER 01</p>
+        <h2>디지털 신호와 0 / 1</h2>
+
+        <div class="why-box">
+          <strong>왜 배우나요?</strong>
+          7-Segment에 숫자를 띄우려면 회로가 "숫자"를 다룰 수 있어야 합니다. 그런데 회로 안에 흐르는 것은 숫자가 아니라 <em>전압</em>뿐입니다.
+          전압을 어떻게 숫자로 바꿔 읽는지가 모든 것의 출발점입니다.
+        </div>
+
+        <h3>아날로그와 디지털</h3>
+        <p>
+          <strong>아날로그(analog)</strong> 신호는 값이 연속적으로 변합니다. 볼륨 노브를 돌리면 소리가 0%, 0.1%, 0.11%, …처럼
+          끊김 없이 커지는 것과 같습니다. 반면 <strong>디지털(digital)</strong> 신호는 정해진 몇 개의 값만 사용합니다.
+          디지털 논리회로에서는 딱 두 가지 상태만 씁니다. <strong>낮음(LOW)</strong>과 <strong>높음(HIGH)</strong>입니다.
+        </p>
+
+        <div class="figure">
+          <div class="two-col">
+            <svg class="wave-svg" viewBox="0 0 260 130" role="img" aria-label="아날로그 신호: 부드럽게 연속적으로 변하는 곡선">
+              <text class="wave-title" x="10" y="14">아날로그 신호</text>
+              <line class="axis" x1="10" y1="115" x2="250" y2="115"/>
+              <line class="axis" x1="10" y1="25" x2="10" y2="115"/>
+              <path class="analog" d="M10,70 C30,25 50,25 70,70 S110,115 130,70 S170,25 190,70 S230,115 250,70"/>
+              <text x="200" y="128">시간 →</text>
+            </svg>
+            <svg class="wave-svg" viewBox="0 0 260 130" role="img" aria-label="디지털 신호: HIGH와 LOW 두 값만 오가는 사각형 파형">
+              <text class="wave-title" x="10" y="14">디지털 신호</text>
+              <line class="axis" x1="40" y1="115" x2="250" y2="115"/>
+              <line class="axis" x1="40" y1="25" x2="40" y2="115"/>
+              <path class="digital" d="M40,100 H80 V40 H130 V100 H160 V40 H220 V100 H250"/>
+              <text x="2" y="44">HIGH</text>
+              <text x="6" y="104">LOW</text>
+              <text x="200" y="128">시간 →</text>
+            </svg>
+          </div>
+          <p class="figure-caption">디지털 신호는 "어느 정도 높은가"가 아니라 "높은가, 낮은가"만 따집니다.</p>
+        </div>
+
+        <h3>전압을 0과 1로 읽기</h3>
+        <p>
+          회로의 전선에는 전압이 걸려 있습니다. 디지털 회로는 이 전압을 다음처럼 <strong>해석</strong>하기로 약속합니다.
+        </p>
+        <div class="table-wrap">
+          <table class="truth compact">
+            <thead><tr><th>전압 (예시)</th><th>상태</th><th>논리값</th></tr></thead>
+            <tbody>
+              <tr><td>0 V 근처</td><td class="text">LOW</td><td class="zero">0</td></tr>
+              <tr><td>5 V 근처</td><td class="text">HIGH</td><td class="one">1</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          핵심은 <strong>"근처"</strong>라는 말입니다. 실제 전선의 전압은 정확히 5.000V가 아니라 4.8V일 수도, 4.6V일 수도 있습니다.
+          하지만 디지털 회로는 "충분히 높으면 1, 충분히 낮으면 0"으로 읽기 때문에 작은 잡음(noise)이 있어도 값이 바뀌지 않습니다.
+          이것이 디지털이 아날로그보다 튼튼한 이유입니다.
+        </p>
+
+        <div class="demo">
+          <div class="demo-header"><span>전압을 논리값으로 해석해 보기</span><span class="tag">INTERACTIVE</span></div>
+          <div class="demo-body">
+            <label for="voltage-slider" class="control-label">입력 전압을 움직여 보세요</label>
+            <input type="range" id="voltage-slider" min="0" max="5" step="0.1" value="0.3">
+            <div class="voltage-meter" aria-hidden="true">
+              <div class="zone zone-low">LOW → 0</div>
+              <div class="zone zone-mid">애매한 구간</div>
+              <div class="zone zone-high">HIGH → 1</div>
+              <div class="needle" id="voltage-needle"></div>
+            </div>
+            <div class="readout" style="margin-top:12px">
+              <div class="readout-item"><span class="readout-label">전압</span><span class="readout-value" id="voltage-value">0.3 V</span></div>
+              <div class="readout-item"><span class="readout-label">논리값</span><span class="readout-value" id="voltage-logic">0</span></div>
+            </div>
+            <p class="demo-hint">구간 경계 숫자는 개념 설명용입니다. 실제 경계값은 부품 종류(TTL, CMOS 등)마다 다르지만, 입문 단계에서는 "낮으면 0, 높으면 1, 그 사이는 피한다"만 기억하면 충분합니다.</p>
+          </div>
+        </div>
+
+        <h3>bit: 0 또는 1 하나</h3>
+        <p>
+          0 또는 1 하나를 담는 정보의 최소 단위를 <strong>bit</strong>(binary digit)라고 합니다. 전선 하나 = bit 하나라고 생각하면 됩니다.
+          bit 하나로는 두 가지 상태(꺼짐/켜짐, 아니오/예)밖에 표현하지 못합니다.
+        </p>
+        <p>
+          그렇다면 0~9 같은 숫자는 어떻게 표현할까요? <strong>전선을 여러 개 쓰면 됩니다.</strong>
+          전선 2개면 00, 01, 10, 11의 4가지, 전선 4개면 16가지 조합이 생깁니다. 이 조합에 숫자를 하나씩 대응시키는 규칙이 다음 챕터의 <strong>이진수</strong>입니다.
+        </p>
+
+        <div class="connect-box" data-stage="all">
+          <div class="connect-box-title">최종 회로와 연결</div>
+          <p>최종 회로의 모든 전선은 0 또는 1만 전달합니다. Clock의 박자, Counter의 4bit, 7-Segment의 a~g 신호까지 전부 "전압이 높은가 낮은가"일 뿐입니다.</p>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           Chapter 2. 이진수
+           ==================================================== -->
+      <section class="chapter" id="ch2" data-group="기초" data-title="이진수 (Binary)" data-num="02">
+        <p class="chapter-label">CHAPTER 02</p>
+        <h2>이진수 (Binary)</h2>
+
+        <div class="why-box">
+          <strong>왜 배우나요?</strong>
+          Counter는 "지금 몇 번째인가"를 bit 4개로 기억합니다. 0101이 왜 5인지 모르면 Counter도, Decoder도 이해할 수 없습니다.
+        </div>
+
+        <h3>십진수의 자리값부터 다시 보기</h3>
+        <p>우리가 매일 쓰는 십진수 <code>352</code>는 사실 각 자리에 <strong>자리값</strong>을 곱해서 더한 것입니다.</p>
+        <div class="formula">352 = 3×100 + 5×10 + 2×1
+    = 3×10² + 5×10¹ + 2×10⁰</div>
+        <p>
+          십진수는 숫자 10개(0~9)를 쓰고, 자리가 하나 올라갈 때마다 자리값이 <strong>10배</strong>가 됩니다.
+          이진수는 숫자 2개(0, 1)만 쓰고, 자리가 올라갈 때마다 자리값이 <strong>2배</strong>가 됩니다.
+        </p>
+        <div class="formula">이진수 0101 = 0×8 + 1×4 + 0×2 + 1×1
+           = 0×2³ + 1×2² + 0×2¹ + 1×2⁰
+           = 5</div>
+
+        <h3>bit 개수와 표현 범위</h3>
+        <div class="table-wrap">
+          <table class="truth compact">
+            <thead><tr><th>bit 수</th><th>가능한 조합</th><th>표현 범위</th></tr></thead>
+            <tbody>
+              <tr><td>1 bit</td><td>2¹ = 2</td><td>0 ~ 1</td></tr>
+              <tr><td>2 bit</td><td>2² = 4</td><td>0 ~ 3</td></tr>
+              <tr><td>3 bit</td><td>2³ = 8</td><td>0 ~ 7</td></tr>
+              <tr><td>4 bit</td><td>2⁴ = 16</td><td>0 ~ 15</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          0~9를 표현하려면 최소 몇 bit가 필요할까요? 3bit는 0~7까지라 부족하고, <strong>4bit(0~15)</strong>면 충분합니다.
+          그래서 우리 Counter는 bit 4개(Flip-Flop 4개)로 만들어집니다.
+        </p>
+
+        <div class="demo binary-converter">
+          <div class="demo-header"><span>십진수 ↔ 4bit 이진수 변환기</span><span class="tag">INTERACTIVE</span></div>
+          <div class="demo-body">
+            <div class="controls">
+              <span class="control-label">Decimal 선택</span>
+            </div>
+            <div class="number-picker" id="binary-number-picker" style="margin-top:6px"></div>
+
+            <div class="controls" style="margin-top:18px">
+              <span class="control-label">Binary (각 bit를 눌러서 직접 바꿀 수도 있습니다)</span>
+            </div>
+            <div class="bit-row" id="binary-bits" style="margin-top:6px"></div>
+
+            <div class="readout" style="margin-top:16px">
+              <div class="readout-item"><span class="readout-label">Decimal</span><span class="readout-value" id="binary-decimal">7</span></div>
+              <div class="readout-item"><span class="readout-label">Binary</span><span class="readout-value" id="binary-binary">0111</span></div>
+            </div>
+            <div class="place-values" id="binary-place-values"></div>
+          </div>
+        </div>
+
+        <h3>0 ~ 15 전체 표</h3>
+        <p>오른쪽 bit(자리값 1)는 매번 0/1이 바뀌고, 그 왼쪽 bit는 2번마다, 그다음은 4번마다, 맨 왼쪽은 8번마다 바뀝니다. 이 규칙이 Chapter 8의 Counter에서 그대로 등장합니다.</p>
+        <div class="table-wrap">
+          <table class="truth compact" id="binary-table">
+            <thead><tr><th>Decimal</th><th class="out-start">Binary</th><th>8</th><th>4</th><th>2</th><th>1</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="connect-box" data-stage="Counter">
+          <div class="connect-box-title">최종 회로와 연결</div>
+          <p>Counter가 내보내는 4개의 전선 Q3 Q2 Q1 Q0은 바로 이 4bit 이진수입니다. 예를 들어 전선 상태가 <code>0101</code>이면 회로는 "지금 5"라고 말하는 중입니다.</p>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           Chapter 3. Boolean Logic
+           ==================================================== -->
+      <section class="chapter" id="ch3" data-group="기초" data-title="Boolean Logic" data-num="03">
+        <p class="chapter-label">CHAPTER 03</p>
+        <h2>Boolean Logic</h2>
+
+        <div class="why-box">
+          <strong>왜 배우나요?</strong>
+          "숫자가 9이고 Clock이 들어오면 0으로 돌아가라", "숫자가 1이나 4가 아니면 segment a를 켜라" — 최종 회로가 하는 판단은 전부 0과 1에 대한 논리 연산입니다.
+        </div>
+
+        <p>
+          <strong>Boolean 논리(불 대수)</strong>는 0과 1, 두 값만 가지고 계산하는 수학입니다. 19세기 수학자 George Boole이 만들었고,
+          지금은 모든 디지털 회로의 언어가 되었습니다. 다음 세 가지 표현은 모두 같은 뜻입니다.
+        </p>
+        <div class="table-wrap">
+          <table class="truth compact">
+            <thead><tr><th>논리값</th><th>참/거짓</th><th>전압</th><th>스위치</th></tr></thead>
+            <tbody>
+              <tr><td class="one">1</td><td class="text">True (참)</td><td class="text">HIGH</td><td class="text">ON</td></tr>
+              <tr><td class="zero">0</td><td class="text">False (거짓)</td><td class="text">LOW</td><td class="text">OFF</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          그래서 "A이고 B이다"라는 문장 논리를 그대로 회로로 옮길 수 있습니다.
+          예를 들어 "<em>문이 닫혀 있고(A) 시작 버튼이 눌렸으면(B) 전자레인지를 켠다(Q)</em>"는 <code>Q = A AND B</code>입니다.
+        </p>
+
+        <h3>기본 연산 6가지</h3>
+        <p>입력 A, B에 대해 출력 Q가 어떻게 정해지는지를 <strong>Truth Table(진리표)</strong>로 정리합니다. 진리표는 "가능한 모든 입력 조합"과 "그때의 출력"을 빠짐없이 적은 표입니다.</p>
+        <div class="table-grid" id="boolean-tables"></div>
+
+        <div class="note">
+          <span class="note-title">기호 정리</span>
+          <ul>
+            <li><code>A̅</code> 또는 <code>¬A</code> : NOT A</li>
+            <li><code>A · B</code> 또는 <code>AB</code> : A AND B (곱셈처럼 생각하면 결과가 같습니다)</li>
+            <li><code>A + B</code> : A OR B (단, 1 + 1 = 1)</li>
+            <li><code>A ⊕ B</code> : A XOR B ("둘이 다르면 1")</li>
+          </ul>
+        </div>
+
+        <div class="connect-box" data-stage="Decoder">
+          <div class="connect-box-title">최종 회로와 연결</div>
+          <p>Decoder가 "지금 숫자에서 segment a를 켤까?"를 결정하는 규칙, MOD-10 Counter가 "10이 됐나?"를 판단하는 규칙이 모두 이런 Boolean 식으로 쓰입니다.</p>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           Chapter 4. Logic Gates
+           ==================================================== -->
+      <section class="chapter" id="ch4" data-group="기초" data-title="Logic Gates" data-num="04">
+        <p class="chapter-label">CHAPTER 04</p>
+        <h2>Logic Gates</h2>
+
+        <div class="why-box">
+          <strong>왜 배우나요?</strong>
+          Boolean 연산은 종이 위의 수학입니다. 그 수학을 실제 전기로 계산하는 부품이 <strong>Logic Gate</strong>입니다. 최종 회로는 결국 게이트 수십 개를 연결한 것입니다.
+        </div>
+
+        <p>
+          Logic Gate는 입력 전선의 전압(0/1)을 보고 출력 전선의 전압을 정하는 작은 회로입니다.
+          내부는 트랜지스터 몇 개로 되어 있지만, 우리는 안을 들여다볼 필요 없이 <strong>"입력이 이러면 출력은 이렇다"</strong>는 진리표만 알면 됩니다.
+          회로도에서는 게이트마다 정해진 모양의 기호를 씁니다.
+        </p>
+
+        <div class="gate-gallery" id="gate-gallery"></div>
+
+        <div class="note">
+          <span class="note-title">작은 동그라미(○)의 의미</span>
+          NAND와 NOR 기호 끝의 작은 동그라미는 "출력을 뒤집는다(NOT)"는 뜻입니다. NAND = AND + NOT, NOR = OR + NOT 입니다.
+        </div>
+
+        <div class="demo">
+          <div class="demo-header"><span>Logic Gate 직접 조작하기</span><span class="tag">INTERACTIVE</span></div>
+          <div class="demo-body">
+            <div class="controls">
+              <span class="control-label">Gate</span>
+              <div class="segmented" id="gate-select"></div>
+            </div>
+            <div class="gate-demo-grid">
+              <div class="gate-demo-inputs">
+                <button class="bit-toggle" id="gate-input-a" type="button" aria-pressed="false"><span class="bit-name">A</span><span class="bit-value">0</span></button>
+                <button class="bit-toggle" id="gate-input-b" type="button" aria-pressed="false"><span class="bit-name">B</span><span class="bit-value">0</span></button>
+              </div>
+              <div class="gate-demo-svg" id="gate-demo-svg"></div>
+            </div>
+            <div class="readout" style="margin-top:8px">
+              <div class="readout-item"><span class="readout-label">논리식</span><span class="readout-value" id="gate-expression" style="font-size:20px">Q = A · B</span></div>
+              <div class="readout-item"><span class="readout-label">출력 Q</span><span class="readout-value" id="gate-output">0</span></div>
+            </div>
+            <div class="table-wrap gate-demo-table"><table class="truth compact" id="gate-demo-table"></table></div>
+            <p class="demo-hint">A, B 버튼을 눌러 입력을 바꿔 보세요. 초록색 전선은 1(HIGH), 회색 전선은 0(LOW)입니다. 진리표에서 현재 입력에 해당하는 행이 강조됩니다.</p>
+          </div>
+        </div>
+
+        <div class="note">
+          <span class="note-title">NAND 하나로 모든 것을</span>
+          NAND 게이트만 여러 개 있으면 NOT, AND, OR 등 모든 게이트를 만들 수 있습니다(<em>universal gate</em>). 예를 들어 NAND의 두 입력을 묶으면 NOT이 됩니다.
+          실제 칩 설계에서 NAND가 특히 많이 쓰이는 이유입니다. 다음 챕터들의 Latch도 NAND나 NOR로 만듭니다.
+        </div>
+
+        <div class="connect-box" data-stage="Decoder">
+          <div class="connect-box-title">최종 회로와 연결</div>
+          <p>BCD → 7-Segment Decoder의 내부는 AND/OR/NOT 게이트 덩어리이고, Counter 속 Flip-Flop도 게이트로 만들어집니다. 최종 회로의 모든 블록은 이 6가지 게이트로 분해할 수 있습니다.</p>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           Chapter 5. 조합 논리회로
+           ==================================================== -->
+      <section class="chapter" id="ch5" data-group="조합 논리" data-title="조합 논리회로" data-num="05">
+        <p class="chapter-label">CHAPTER 05</p>
+        <h2>조합 논리회로 (Combinational Logic)</h2>
+
+        <div class="why-box">
+          <strong>왜 배우나요?</strong>
+          게이트 하나로는 할 수 있는 일이 적습니다. 여러 게이트를 연결하면 "더하기", "숫자를 7-Segment 신호로 바꾸기" 같은 쓸모 있는 일을 할 수 있습니다.
+        </div>
+
+        <p>여러 게이트를 연결해서 만든 회로 중, 다음 성질을 가진 것을 <strong>조합 논리회로</strong>라고 합니다.</p>
+        <div class="formula prose">현재 출력은 현재 입력에 의해서만 결정된다.</div>
+        <p>
+          즉, 조합 논리회로는 <strong>기억이 없습니다.</strong> 같은 입력을 넣으면 언제나 같은 출력이 나옵니다.
+          1분 전에 무슨 입력이 들어왔었는지는 전혀 상관없습니다. 그래서 조합 논리회로는 <strong>진리표 하나로 완전히 설명</strong>할 수 있습니다.
+        </p>
+
+        <h3>예제: Half Adder (반가산기)</h3>
+        <p>1bit 두 개를 더하는 회로입니다. 이진수 덧셈 규칙을 보면:</p>
+        <div class="formula">0 + 0 = 0      (자리올림 없음)
+0 + 1 = 1
+1 + 0 = 1
+1 + 1 = 10     (결과 0, 자리올림 1)</div>
+        <p>결과 자리(<strong>Sum</strong>)와 자리올림(<strong>Carry</strong>)을 따로 보면, 이미 아는 게이트와 똑같습니다.</p>
+        <div class="formula">Sum   = A ⊕ B     (XOR: 둘이 다를 때 1)
+Carry = A · B     (AND: 둘 다 1일 때 1)</div>
+
+        <div class="demo">
+          <div class="demo-header"><span>Half Adder 시뮬레이터</span><span class="tag">INTERACTIVE</span></div>
+          <div class="demo-body">
+            <div class="gate-demo-grid">
+              <div class="gate-demo-inputs">
+                <button class="bit-toggle" id="ha-a" type="button" aria-pressed="false"><span class="bit-name">A</span><span class="bit-value">0</span></button>
+                <button class="bit-toggle" id="ha-b" type="button" aria-pressed="false"><span class="bit-name">B</span><span class="bit-value">0</span></button>
+              </div>
+              <div class="gate-demo-svg" id="ha-svg"></div>
+            </div>
+            <div class="readout" style="margin-top:8px">
+              <div class="readout-item"><span class="readout-label">계산</span><span class="readout-value" id="ha-equation" style="font-size:20px">0 + 0 = 00</span></div>
+              <div class="readout-item"><span class="readout-label">Carry</span><span class="readout-value" id="ha-carry">0</span></div>
+              <div class="readout-item"><span class="readout-label">Sum</span><span class="readout-value" id="ha-sum">0</span></div>
+            </div>
+            <div class="table-wrap"><table class="truth compact" id="ha-table">
+              <thead><tr><th>A</th><th>B</th><th class="out-start">Carry</th><th>Sum</th></tr></thead>
+              <tbody></tbody>
+            </table></div>
+          </div>
+        </div>
+
+        <h3>미리 보기: Decoder도 조합 논리회로다</h3>
+        <p>
+          나중에 만들 <strong>BCD → 7-Segment Decoder</strong>도 정확히 같은 종류의 회로입니다.
+          입력은 4bit(BCD), 출력은 7개(a~g)일 뿐, "지금 입력이 0101이면 출력은 1011011"처럼 <strong>현재 입력만 보고</strong> 출력을 정합니다.
+          Half Adder가 진리표 4줄짜리였다면, Decoder는 진리표 10줄짜리 조합 논리회로입니다.
+        </p>
+
+        <div class="connect-box" data-stage="Decoder">
+          <div class="connect-box-title">최종 회로와 연결</div>
+          <p>최종 회로의 Decoder 블록이 바로 조합 논리회로입니다. 하지만 Counter는 다릅니다. "다음 숫자"를 만들려면 "지금 숫자"를 <em>기억</em>해야 하는데, 조합 논리회로에는 기억이 없습니다. 그래서 다음 챕터가 필요합니다.</p>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           Chapter 6. Latch
+           ==================================================== -->
+      <section class="chapter" id="ch6" data-group="순차 논리" data-title="Memory의 시작: Latch" data-num="06">
+        <p class="chapter-label">CHAPTER 06</p>
+        <h2>Memory의 시작: Latch</h2>
+
+        <div class="why-box">
+          <strong>왜 배우나요?</strong>
+          Counter는 "지금 3이니까 다음은 4"라고 판단해야 합니다. 그러려면 회로가 <strong>3이라는 사실을 기억</strong>하고 있어야 합니다. 회로가 기억을 갖는 첫 번째 방법이 Latch입니다.
+        </div>
+
+        <h3>조합 논리 vs 순차 논리</h3>
+        <div class="table-wrap">
+          <table class="truth">
+            <thead><tr><th></th><th>조합 논리 (Combinational)</th><th>순차 논리 (Sequential)</th></tr></thead>
+            <tbody>
+              <tr><td class="text"><strong>출력을 정하는 것</strong></td><td class="text">현재 입력만</td><td class="text">현재 입력 + <strong>이전 상태</strong></td></tr>
+              <tr><td class="text"><strong>기억</strong></td><td class="text">없음</td><td class="text">있음</td></tr>
+              <tr><td class="text"><strong>비유</strong></td><td class="text">계산기 버튼 하나</td><td class="text">계산기의 메모리 기능</td></tr>
+              <tr><td class="text"><strong>예</strong></td><td class="text">Half Adder, Decoder</td><td class="text">Latch, Flip-Flop, Counter</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>기억의 비밀: 출력을 다시 입력으로 (Feedback)</h3>
+        <p>
+          NOR 게이트 두 개를 준비해서, <strong>각 게이트의 출력을 상대 게이트의 입력으로</strong> 연결합니다(cross-coupling).
+          그러면 두 게이트가 서로의 상태를 계속 붙잡아 주는 고리가 생깁니다. 한 번 Q=1이 되면, 그 1이 다시 돌아와서 Q=1을 유지시킵니다.
+          이 회로를 <strong>SR Latch</strong>라고 합니다.
+        </p>
+        <ul>
+          <li><strong>S (Set)</strong> = 1 → Q를 1로 만든다</li>
+          <li><strong>R (Reset)</strong> = 1 → Q를 0으로 만든다</li>
+          <li><strong>S = R = 0</strong> → 아무것도 바꾸지 않는다 → <strong>이전 값을 기억(Hold)</strong></li>
+        </ul>
+
+        <div class="demo">
+          <div class="demo-header"><span>NOR SR Latch — 기억하는 회로</span><span class="tag">INTERACTIVE</span></div>
+          <div class="demo-body">
+            <div class="gate-demo-grid">
+              <div class="gate-demo-inputs">
+                <button class="bit-toggle" id="latch-r" type="button" aria-pressed="false"><span class="bit-name">R (Reset)</span><span class="bit-value">0</span></button>
+                <button class="bit-toggle" id="latch-s" type="button" aria-pressed="false"><span class="bit-name">S (Set)</span><span class="bit-value">0</span></button>
+              </div>
+              <div class="gate-demo-svg" id="latch-svg"></div>
+            </div>
+            <div class="readout" style="margin-top:8px">
+              <div class="readout-item"><span class="readout-label">Q (기억된 값)</span><span class="readout-value" id="latch-q">0</span></div>
+              <div class="readout-item"><span class="readout-label">Q̅</span><span class="readout-value" id="latch-qbar">1</span></div>
+            </div>
+            <p class="status-line" id="latch-status"></p>
+            <p class="demo-hint">
+              실험: ① S를 1로 → Q=1 ② S를 다시 0으로 → <strong>Q는 여전히 1!</strong> (입력은 사라졌는데 회로가 기억함)
+              ③ R을 1로 → Q=0 ④ R을 0으로 → Q=0 유지.
+            </p>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="truth compact">
+            <thead><tr><th>S</th><th>R</th><th class="out-start">Q (다음)</th><th>의미</th></tr></thead>
+            <tbody>
+              <tr><td class="zero">0</td><td class="zero">0</td><td class="out-start">Q (이전 값)</td><td class="text">유지 (Hold) — 기억</td></tr>
+              <tr><td class="one">1</td><td class="zero">0</td><td class="out-start one">1</td><td class="text">Set</td></tr>
+              <tr><td class="zero">0</td><td class="one">1</td><td class="out-start zero">0</td><td class="text">Reset</td></tr>
+              <tr class="muted"><td>1</td><td>1</td><td class="out-start">—</td><td class="text">사용 금지 (Q와 Q̅가 모두 0이 됨)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          이 진리표에는 조합 논리에는 없던 것이 있습니다. 출력 칸에 <strong>"Q (이전 값)"</strong>이 들어 있다는 점입니다.
+          출력이 과거에 의존한다 — 이것이 순차 논리회로의 정의입니다.
+        </p>
+        <div class="note">
+          NAND 두 개를 cross-coupling해도 같은 기억 회로를 만들 수 있습니다(이때는 입력이 0일 때 동작하는 S̅R̅ Latch가 됩니다). 중요한 것은 게이트 종류가 아니라 <strong>feedback 고리</strong>입니다.
+        </div>
+
+        <div class="connect-box" data-stage="Counter">
+          <div class="connect-box-title">최종 회로와 연결</div>
+          <p>Latch는 1bit를 기억합니다. Counter의 숫자 4bit를 기억하는 장치의 뿌리가 바로 이 feedback 구조입니다. 다만 Latch는 입력이 바뀌는 즉시 반응해서 "박자에 맞춰 한 칸씩" 움직이기 어렵습니다. 그 문제를 Flip-Flop이 해결합니다.</p>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           Chapter 7. Flip-Flop & Clock
+           ==================================================== -->
+      <section class="chapter" id="ch7" data-group="순차 논리" data-title="Flip-Flop과 Clock" data-num="07">
+        <p class="chapter-label">CHAPTER 07</p>
+        <h2>Flip-Flop과 Clock</h2>
+
+        <div class="why-box">
+          <strong>왜 배우나요?</strong>
+          Counter는 "Clock이 한 번 칠 때 정확히 1만" 증가해야 합니다. 정해진 순간에만 값을 바꾸는 기억 장치가 Flip-Flop입니다.
+        </div>
+
+        <h3>Clock: 회로의 박자</h3>
+        <p>
+          <strong>Clock</strong>은 0과 1을 규칙적으로 반복하는 신호입니다. 오케스트라 지휘자의 지휘봉처럼, 회로 전체에 "지금!"이라는 타이밍을 알려 줍니다.
+        </p>
+        <ul>
+          <li><strong>Rising Edge (상승 에지, ↑)</strong>: Clock이 0 → 1로 올라가는 순간</li>
+          <li><strong>Falling Edge (하강 에지, ↓)</strong>: Clock이 1 → 0으로 내려가는 순간</li>
+        </ul>
+
+        <h3>Flip-Flop = Clock 에지에서만 바뀌는 1bit 기억 장치</h3>
+        <p>
+          Latch는 입력이 바뀌면 언제든 바로 반응합니다. <strong>Flip-Flop</strong>은 Latch를 개량해서 <strong>Clock 에지 순간에만</strong> 입력을 보고 값을 바꿉니다.
+          그 외의 시간에는 입력이 아무리 바뀌어도 값을 그대로 유지합니다. 덕분에 회로 전체가 박자에 맞춰 한 걸음씩 움직일 수 있습니다.
+        </p>
+
+        <h4>D Flip-Flop (Data)</h4>
+        <p>Clock의 Rising Edge 순간에 입력 <strong>D의 값을 찍어서(sample) Q에 저장</strong>합니다. "사진 찍기"와 같습니다. 셔터(Clock ↑)를 누른 순간의 장면만 남습니다.</p>
+        <div class="formula">Clock ↑ 순간:  Q(다음) = D
+그 외 시간:    Q 유지</div>
+
+        <div class="demo">
+          <div class="demo-header"><span>D Flip-Flop</span><span class="tag">INTERACTIVE</span></div>
+          <div class="demo-body">
+            <div class="controls">
+              <button class="bit-toggle" id="dff-d" type="button" aria-pressed="false"><span class="bit-name">D</span><span class="bit-value">0</span></button>
+              <button class="btn primary" id="dff-clock" type="button">Clock ↑</button>
+              <button class="btn" id="dff-reset" type="button">초기화</button>
+              <div class="readout" style="margin-left:12px">
+                <div class="readout-item"><span class="readout-label">Q</span><span class="readout-value" id="dff-q">0</span></div>
+              </div>
+            </div>
+            <div class="waveform" id="dff-wave"></div>
+            <p class="demo-hint">D를 여러 번 바꿔 봐도 Q는 변하지 않습니다. Clock ↑을 누르는 순간에만 D 값이 Q로 복사됩니다.</p>
+          </div>
+        </div>
+
+        <h4>T Flip-Flop (Toggle) — Counter의 주인공</h4>
+        <p>
+          T Flip-Flop은 더 단순합니다. T=1로 고정해 두면, <strong>Clock 에지가 올 때마다 Q가 뒤집힙니다(toggle).</strong>
+        </p>
+        <div class="formula">Clock:  ↑   ↑   ↑   ↑   ↑
+Q:    0 → 1 → 0 → 1 → 0 → ...</div>
+        <p>
+          전등 스위치를 "누를 때마다 켜짐/꺼짐이 바뀌는" 방식이라고 생각하면 됩니다.
+          흥미로운 점은, Q가 0→1→0으로 한 바퀴 도는 데 Clock이 2번 필요하다는 것입니다. 즉 <strong>Q는 Clock의 절반 속도로 깜빡입니다.</strong>
+          이 성질이 바로 다음 챕터 Counter의 비밀입니다.
+        </p>
+
+        <div class="demo">
+          <div class="demo-header"><span>T Flip-Flop (T = 1)</span><span class="tag">INTERACTIVE</span></div>
+          <div class="demo-body">
+            <div class="controls">
+              <button class="btn primary" id="tff-clock" type="button">Clock ↑</button>
+              <button class="btn" id="tff-reset" type="button">초기화</button>
+              <div class="bit-led" id="tff-led" style="margin-left:12px">
+                <div class="led">0</div>
+                <span class="led-name">Q</span>
+              </div>
+              <div class="readout" style="margin-left:12px">
+                <div class="readout-item"><span class="readout-label">받은 Clock 수</span><span class="readout-value" id="tff-count">0</span></div>
+              </div>
+            </div>
+            <div class="waveform" id="tff-wave"></div>
+            <p class="demo-hint">Clock ↑ 버튼을 누를 때마다 Q가 0 ↔ 1로 바뀝니다. 아래 파형에서 Q의 주기가 Clock 주기의 2배인 것을 확인해 보세요.</p>
+          </div>
+        </div>
+
+        <div class="note">
+          <span class="note-title">JK Flip-Flop은?</span>
+          교과서에는 JK Flip-Flop도 나옵니다. J=K=1로 두면 T Flip-Flop처럼 toggle하기 때문에, 실제 Counter IC 안에서는 JK나 D Flip-Flop으로 T 동작을 만드는 경우가 많습니다. 이번 교재에서는 개념이 가장 직관적인 T Flip-Flop으로 설명합니다.
+        </div>
+
+        <div class="connect-box" data-stage="Counter">
+          <div class="connect-box-title">최종 회로와 연결</div>
+          <p>Flip-Flop은 현재 숫자를 기억하는 Counter의 기본 구성 요소입니다. 0~9를 저장하려면 4bit가 필요하므로, 최종 Counter 안에는 Flip-Flop이 정확히 4개 들어 있습니다.</p>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           Chapter 8. Binary Counter
+           ==================================================== -->
+      <section class="chapter" id="ch8" data-group="순차 논리" data-title="Binary Counter" data-num="08">
+        <p class="chapter-label">CHAPTER 08</p>
+        <h2>Binary Counter</h2>
+
+        <div class="why-box">
+          <strong>왜 배우나요?</strong>
+          드디어 "숫자가 하나씩 올라가는" 회로를 만듭니다. 최종 회로의 심장입니다.
+        </div>
+
+        <h3>T Flip-Flop 4개를 이어 붙이면</h3>
+        <p>Chapter 2의 이진수 표를 다시 보세요. 각 bit가 바뀌는 규칙이 있었습니다.</p>
+        <ul>
+          <li><strong>Q0</strong> (자리값 1): Clock마다 toggle</li>
+          <li><strong>Q1</strong> (자리값 2): Q0이 1 → 0으로 떨어질 때 toggle (2번에 1번)</li>
+          <li><strong>Q2</strong> (자리값 4): Q1이 1 → 0으로 떨어질 때 toggle (4번에 1번)</li>
+          <li><strong>Q3</strong> (자리값 8): Q2가 1 → 0으로 떨어질 때 toggle (8번에 1번)</li>
+        </ul>
+        <p>
+          T Flip-Flop은 "Clock의 절반 속도로 깜빡인다"고 했죠. 그렇다면 첫 번째 Flip-Flop의 출력 Q0을 두 번째 Flip-Flop의 Clock으로 쓰면,
+          두 번째는 1/4 속도, 세 번째는 1/8 속도…로 깜빡입니다. 이것이 정확히 이진수가 1씩 증가하는 패턴입니다!
+        </p>
+        <div class="formula">Clock ─▶ [T-FF] ─Q0─▶ [T-FF] ─Q1─▶ [T-FF] ─Q2─▶ [T-FF] ─Q3
+          (÷2)            (÷4)            (÷8)            (÷16)</div>
+        <p>
+          앞 Flip-Flop의 변화가 물결처럼 다음으로 전달된다고 해서 이런 구조를 <strong>Ripple Counter(비동기 카운터)</strong>라고 부릅니다.
+          (모든 Flip-Flop이 같은 Clock을 받는 Synchronous Counter도 있는데, 결과로 나오는 숫자 순서는 같습니다.)
+        </p>
+
+        <div class="demo">
+          <div class="demo-header"><span>4-bit Binary Counter</span><span class="tag">INTERACTIVE</span></div>
+          <div class="demo-body">
+            <div class="controls">
+              <button class="btn primary" id="bc-clock" type="button">Clock ↑</button>
+              <button class="btn" id="bc-auto" type="button">Auto ▶</button>
+              <button class="btn" id="bc-reset" type="button">Reset</button>
+            </div>
+            <div class="readout" style="margin-top:18px; align-items:center">
+              <div class="bit-row" id="bc-bits"></div>
+              <div class="readout-item"><span class="readout-label">Decimal</span><span class="readout-value" id="bc-decimal">0</span></div>
+            </div>
+            <div class="sequence-strip" id="bc-strip"></div>
+            <p class="status-line" id="bc-status">Clock을 눌러 보세요. 테두리가 빛나는 bit는 방금 toggle된 Flip-Flop입니다.</p>
+          </div>
+        </div>
+
+        <p>15(<code>1111</code>) 다음 Clock이 들어오면 모든 bit가 toggle되어 <code>0000</code>으로 돌아갑니다. 자동차 주행거리계가 99999 다음 00000이 되는 것과 같습니다(overflow). 4bit Counter는 16개의 상태를 순환하므로 <strong>MOD-16 Counter</strong>라고도 부릅니다.</p>
+
+        <div class="connect-box" data-stage="Counter">
+          <div class="connect-box-title">최종 회로와 연결</div>
+          <p>Counter 블록의 기본 형태가 완성되었습니다. 하지만 문제가 하나 남았습니다. 7-Segment 하나에는 0~9만 표시할 수 있는데, 이 Counter는 10~15까지 올라갑니다.</p>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           Chapter 9. MOD-10 Counter
+           ==================================================== -->
+      <section class="chapter" id="ch9" data-group="순차 논리" data-title="MOD-10 Counter" data-num="09">
+        <p class="chapter-label">CHAPTER 09</p>
+        <h2>MOD-10 Counter</h2>
+
+        <div class="why-box">
+          <strong>왜 배우나요?</strong>
+          우리가 원하는 것은 0 → 1 → … → 9 → 0의 <strong>십진수 한 자리</strong>입니다. 4bit Counter를 9 다음에 0으로 돌아가게 고쳐야 합니다.
+        </div>
+
+        <h3>문제: 4bit Counter는 15까지 간다</h3>
+        <div class="formula">4bit Counter:  0 → 1 → ... → 9 → 10 → 11 → ... → 15 → 0
+우리가 원하는:  0 → 1 → ... → 9 → 0</div>
+
+        <h3>해결: 10이 되는 순간 Reset</h3>
+        <p>10의 이진수는 <code>1010</code>입니다. 0~9 중에는 <strong>Q3 = 1이면서 Q1 = 1인 숫자가 없습니다.</strong> (8=<code>1000</code>, 9=<code>1001</code>) 그러므로 "Q3 AND Q1"이 1이 되는 순간이 곧 10이 된 순간입니다.</p>
+        <div class="formula">CLEAR = Q3 · Q1        ← AND 게이트 하나!</div>
+        <p>이 CLEAR 신호를 모든 Flip-Flop의 Reset 단자에 연결하면, 10이 되자마자 모든 bit가 0이 됩니다.</p>
+        <div class="formula">   9     1001
+         │ Clock ↑
+  10     1010     ← Q3·Q1 = 1 감지!
+         │ 즉시 Reset (아주 짧은 순간, 수 ns)
+   0     0000</div>
+        <p>
+          <code>1010</code> 상태는 사람 눈으로 볼 수 없을 만큼 짧은 순간(수 나노초)만 존재합니다. 그래서 사용자 입장에서는 그냥 <strong>9 → 0</strong>으로 보입니다.
+          Chapter 4에서 배운 AND 게이트 하나가 Counter의 성격을 바꿔 버린 것입니다.
+        </p>
+
+        <h3>이름: MOD-10 Counter / Decade Counter</h3>
+        <p>
+          10개의 상태(0~9)를 순환하므로 <strong>MOD-10 Counter</strong>(modulo 10), 십진수 한 자리를 세므로 <strong>Decade Counter</strong>라고 부릅니다.
+          실제 부품으로는 74HC90, 74HC160, CD4518 같은 IC가 있습니다.
+        </p>
+
+        <div class="demo">
+          <div class="demo-header"><span>MOD-10 Counter (Decade Counter)</span><span class="tag">INTERACTIVE</span></div>
+          <div class="demo-body">
+            <div class="controls">
+              <button class="btn primary" id="mod-clock" type="button">Clock ↑</button>
+              <button class="btn" id="mod-auto" type="button">Auto ▶</button>
+              <button class="btn" id="mod-reset" type="button">Reset</button>
+            </div>
+            <div class="readout" style="margin-top:18px; align-items:center">
+              <div class="bit-row" id="mod-bits"></div>
+              <div class="readout-item"><span class="readout-label">Decimal</span><span class="readout-value" id="mod-decimal">0</span></div>
+            </div>
+            <div class="reset-logic" id="mod-reset-logic"></div>
+            <div class="sequence-strip" id="mod-strip"></div>
+            <p class="status-line" id="mod-status">9까지 Clock을 눌러 보고, 9에서 한 번 더 눌러 보세요.</p>
+          </div>
+        </div>
+
+        <div class="note warn">
+          <span class="note-title">참고: 비동기 Reset의 한계</span>
+          여기서 설명한 "10이 되면 즉시 Reset" 방식은 원리가 직관적이라 입문용으로 좋지만, 아주 짧은 순간 <code>1010</code>이 생긴다는 단점(glitch)이 있습니다. 실제 설계에서는 9일 때 "다음 Clock에 0을 넣어라"라고 미리 준비하는 동기식(synchronous) 방식을 더 많이 씁니다. 결과로 보이는 숫자 순서는 같습니다.
+        </div>
+
+        <div class="connect-box" data-stage="Counter">
+          <div class="connect-box-title">최종 회로와 연결</div>
+          <p>최종 회로의 MOD-10 Counter 블록이 완성되었습니다. 이 블록은 Clock이 들어올 때마다 0~9를 4개의 전선으로 내보냅니다. 이 4bit의 이름이 다음 챕터의 BCD입니다.</p>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           Chapter 10. BCD
+           ==================================================== -->
+      <section class="chapter" id="ch10" data-group="출력" data-title="BCD" data-num="10">
+        <p class="chapter-label">CHAPTER 10</p>
+        <h2>BCD (Binary Coded Decimal)</h2>
+
+        <div class="why-box">
+          <strong>왜 배우나요?</strong>
+          MOD-10 Counter가 내보내는 4bit는 평범한 이진수와 조금 다른 약속을 따릅니다. 그 약속이 BCD이고, Decoder는 BCD를 입력으로 받습니다.
+        </div>
+
+        <p>
+          <strong>BCD</strong>는 "십진수 한 자리(0~9)를 4bit 이진수로 적는 방법"입니다.
+          0~9 구간에서는 일반 이진수와 똑같이 생겼습니다.
+        </p>
+        <div class="table-wrap">
+          <table class="truth compact" id="bcd-table">
+            <thead><tr><th>4bit 값</th><th class="out-start">일반 Binary로 읽으면</th><th>BCD로 읽으면</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p>
+          차이는 <code>1010</code> ~ <code>1111</code>입니다. 일반 이진수에서는 10~15를 뜻하지만, BCD에서는 <strong>사용하지 않는(invalid) 코드</strong>입니다.
+          BCD 한 묶음(4bit)은 언제나 십진수 한 자리만 담기 때문입니다.
+        </p>
+
+        <h3>여러 자리 숫자에서의 차이</h3>
+        <p>
+          차이는 숫자가 두 자리 이상일 때 분명해집니다. 십진수 <code>25</code>를 표현해 보면:
+        </p>
+        <div class="formula">일반 Binary:  25 = 11001                  (숫자 전체를 한 번에 이진수로)
+BCD:          25 = 0010 0101              (자리마다 따로: 2 → 0010, 5 → 0101)</div>
+        <p>BCD는 bit를 조금 낭비하지만, <strong>자리마다 바로 7-Segment 하나에 연결할 수 있어서</strong> 숫자 표시 장치에 아주 편리합니다.</p>
+
+        <div class="demo">
+          <div class="demo-header"><span>Binary vs BCD 비교</span><span class="tag">INTERACTIVE</span></div>
+          <div class="demo-body">
+            <label for="bcd-input" class="control-label">십진수: <strong id="bcd-input-value" class="mono">25</strong></label>
+            <input type="range" id="bcd-input" min="0" max="99" value="25">
+            <div class="place-values" style="line-height:2">
+              <div>일반 Binary : <span id="bcd-binary-out" class="on"></span></div>
+              <div>BCD&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : <span id="bcd-bcd-out" class="on"></span></div>
+            </div>
+            <p class="demo-hint">BCD에서는 십의 자리와 일의 자리가 각각 독립된 4bit 묶음입니다. 두 자리 카운터를 만든다면 MOD-10 Counter 두 개 + 7-Segment 두 개를 쓰면 됩니다.</p>
+          </div>
+        </div>
+
+        <div class="connect-box" data-stage="BCD">
+          <div class="connect-box-title">최종 회로와 연결</div>
+          <p>MOD-10 Counter의 출력 4bit는 언제나 0000~1001, 즉 올바른 BCD 값입니다. Counter와 Decoder는 "BCD"라는 공통 언어로 대화합니다.</p>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           Chapter 11. 7-Segment Display
+           ==================================================== -->
+      <section class="chapter" id="ch11" data-group="출력" data-title="7-Segment Display" data-num="11">
+        <p class="chapter-label">CHAPTER 11</p>
+        <h2>7-Segment Display</h2>
+
+        <div class="why-box">
+          <strong>왜 배우나요?</strong>
+          회로 안의 <code>0101</code>은 사람이 읽기 어렵습니다. 숫자 모양으로 보여 주는 출력 장치가 필요합니다.
+        </div>
+
+        <p>
+          7-Segment Display는 막대 모양의 LED 7개(<strong>segment</strong>)로 숫자를 그리는 부품입니다.
+          각 segment에는 위에서부터 시계 방향으로 <code>a</code> ~ <code>f</code>, 가운데에 <code>g</code>라는 이름이 붙어 있습니다.
+        </p>
+
+        <div class="figure">
+          <div class="seg-demo-layout">
+            <div class="seven-seg size-md with-labels" data-seven-seg id="seg-anatomy"></div>
+            <div>
+              <p><strong>segment 이름</strong></p>
+              <div class="formula" style="margin:0">      a
+     ───
+  f │   │ b
+    │ g │
+     ───
+  e │   │ c
+    │   │
+     ───
+      d</div>
+            </div>
+          </div>
+        </div>
+
+        <h3>1 = ON, 0 = OFF (Common Cathode 기준)</h3>
+        <p>
+          7-Segment에는 LED의 (−)쪽을 공통으로 묶은 <strong>Common Cathode</strong>형과 (+)쪽을 묶은 <strong>Common Anode</strong>형이 있습니다.
+          이 교재는 Common Cathode를 기준으로 합니다. 이 경우 segment 핀에 <strong>1(HIGH)을 주면 켜지고, 0(LOW)을 주면 꺼집니다.</strong>
+          (Common Anode는 반대로 0일 때 켜집니다.)
+        </p>
+        <p>그러면 숫자 하나를 표시하는 것은 결국 <strong>7개의 0/1 조합</strong>을 정하는 문제가 됩니다.</p>
+
+        <div class="demo">
+          <div class="demo-header"><span>7-Segment 직접 켜 보기</span><span class="tag">INTERACTIVE</span></div>
+          <div class="demo-body">
+            <div class="controls">
+              <span class="control-label">숫자 선택</span>
+              <div class="number-picker" id="seg-picker"></div>
+            </div>
+            <div class="controls">
+              <label class="control-label"><input type="checkbox" id="seg-labels-toggle" checked> segment 이름 표시</label>
+            </div>
+            <div class="seg-demo-layout" style="margin-top:18px">
+              <div class="seven-seg size-lg with-labels" data-seven-seg id="seg-display"></div>
+              <div>
+                <div class="readout"><div class="readout-item"><span class="readout-label">segment 신호 (a b c d e f g)</span><span class="readout-value" id="seg-pattern">1111110</span></div></div>
+                <div class="seg-bits" id="seg-bits"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3>숫자별 segment Truth Table</h3>
+        <div class="table-wrap">
+          <table class="truth" id="seg-table">
+            <thead><tr><th>숫자</th><th class="out-start">a</th><th>b</th><th>c</th><th>d</th><th>e</th><th>f</th><th>g</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p>위 데모에서 숫자를 고르면 해당 행이 강조됩니다. 예를 들어 <strong>1</strong>은 오른쪽 세로 막대 두 개(b, c)만 켜고, <strong>8</strong>은 전부 켭니다.</p>
+
+        <div class="connect-box" data-stage="7-Segment">
+          <div class="connect-box-title">최종 회로와 연결</div>
+          <p>최종 회로의 마지막 블록입니다. 그런데 Counter가 주는 것은 4bit(BCD)이고, 7-Segment가 원하는 것은 7개 신호(a~g)입니다. 둘 사이를 연결해 줄 번역기가 필요합니다.</p>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           Chapter 12. BCD → 7-Segment Decoder
+           ==================================================== -->
+      <section class="chapter" id="ch12" data-group="출력" data-title="BCD → 7-Segment Decoder" data-num="12">
+        <p class="chapter-label">CHAPTER 12</p>
+        <h2>BCD → 7-Segment Decoder</h2>
+
+        <div class="why-box">
+          <strong>왜 배우나요?</strong>
+          Counter의 언어(BCD 4bit)와 Display의 언어(a~g 7개)는 다릅니다. 이 둘을 번역하는 조합 논리회로가 Decoder입니다.
+        </div>
+
+        <div class="figure">
+          <div class="block-flow">
+            <div class="block">Counter 출력<small class="mono">D C B A (= Q3 Q2 Q1 Q0) · 4개 신호</small></div>
+            <div class="flow-arrow"></div>
+            <div class="block accent">BCD → 7-Segment Decoder<small>조합 논리회로 (AND / OR / NOT)</small></div>
+            <div class="flow-arrow"></div>
+            <div class="block">7-Segment 입력<small class="mono">a b c d e f g · 7개 신호</small></div>
+          </div>
+        </div>
+        <p>
+          관례상 BCD 입력은 <code>D C B A</code>로 표기합니다. <code>D</code>가 자리값 8(MSB), <code>A</code>가 자리값 1(LSB)입니다.
+          Counter의 Q3 → D, Q2 → C, Q1 → B, Q0 → A로 연결됩니다.
+        </p>
+        <p>
+          Decoder가 하는 일은 Chapter 11의 표를 그대로 회로로 만드는 것입니다. 4bit 입력을 받아, 그 숫자에 맞는 7bit 패턴을 출력합니다.
+          Chapter 5에서 예고했듯이 <strong>현재 입력만 보고 출력을 정하는 조합 논리회로</strong>입니다.
+        </p>
+
+        <div class="demo">
+          <div class="demo-header"><span>Decoder 시뮬레이터</span><span class="tag">INTERACTIVE</span></div>
+          <div class="demo-body">
+            <div class="decoder-demo">
+              <div class="decoder-inputs" id="dec-inputs"></div>
+              <span class="arrow-right">→</span>
+              <div>
+                <div class="decoder-box">BCD → 7-Seg<br>Decoder<small id="dec-input-label">입력 0101 = 5</small></div>
+                <div class="decoder-outputs" id="dec-outputs" style="margin-top:10px"></div>
+              </div>
+              <div class="seven-seg size-md" data-seven-seg id="dec-display"></div>
+            </div>
+            <p class="status-line" id="dec-status"></p>
+            <p class="demo-hint">D C B A 버튼을 눌러 4bit 입력을 직접 바꿔 보세요. 1010 이상(BCD가 아닌 값)을 넣으면 어떻게 될까요?</p>
+          </div>
+        </div>
+
+        <h3>segment 하나씩 보기: "segment a는 언제 켜질까?"</h3>
+        <p>
+          Decoder를 7개의 작은 회로로 나눠 생각하면 쉽습니다. segment a 담당 회로, segment b 담당 회로, …
+          각 회로는 "입력 숫자가 이 중 하나면 1을 내보낸다"는 일만 합니다.
+        </p>
+
+        <div class="demo">
+          <div class="demo-header"><span>segment 탐색기</span><span class="tag">INTERACTIVE</span></div>
+          <div class="demo-body">
+            <div class="controls">
+              <span class="control-label">segment 선택</span>
+              <div class="segmented" id="explorer-picker"></div>
+            </div>
+            <div class="segment-explorer" id="explorer-grid"></div>
+            <div class="formula" id="explorer-summary" style="margin-bottom:0; white-space:pre-wrap"></div>
+          </div>
+        </div>
+
+        <p>
+          예를 들어 segment a는 <strong>1과 4에서만 꺼집니다.</strong> 그러면 segment a 회로는 "입력이 1(<code>0001</code>)도 아니고 4(<code>0100</code>)도 아니면 1"이라는
+          Boolean 식으로 쓸 수 있고, 이 식은 NOT/AND/OR 게이트로 바로 만들 수 있습니다.
+        </p>
+        <div class="formula">a = NOT( 입력이 0001 ) AND NOT( 입력이 0100 )
+  = NOT( D̅·C̅·B̅·A ) · NOT( D̅·C·B̅·A̅ )</div>
+        <p>
+          이런 식을 더 짧게 정리하는 방법(Karnaugh Map, 불 대수 간소화)은 다음 단계에서 배웁니다. 지금은
+          <strong>"Decoder = segment마다 하나씩 있는 조합 논리회로 7개"</strong>라는 그림만 잡으면 충분합니다.
+        </p>
+
+        <div class="note">
+          <span class="note-title">실제 부품: CD4511</span>
+          <p>BCD → 7-Segment Decoder는 이미 IC로 판매되고 있어서 직접 게이트로 만들 필요가 없습니다. 대표적인 것이 <strong>CD4511</strong>(CMOS, Common Cathode용)입니다.</p>
+          <ul>
+            <li>입력: A, B, C, D (BCD 4bit)</li>
+            <li>출력: a ~ g (7-Segment에 저항을 거쳐 연결)</li>
+            <li>부가 기능: LT(Lamp Test, 모든 segment 켜기), BL(Blanking, 모두 끄기), LE(Latch Enable, 값 고정)</li>
+            <li>1010 이상의 잘못된 BCD 입력이 들어오면 모든 segment를 끕니다(위 시뮬레이터도 같은 동작).</li>
+          </ul>
+          <p>Common Anode 7-Segment에는 74LS47 같은 다른 Decoder를 씁니다.</p>
+        </div>
+
+        <div class="connect-box" data-stage="Decoder">
+          <div class="connect-box-title">최종 회로와 연결</div>
+          <p>Counter와 7-Segment 사이의 Decoder 블록이 채워졌습니다. 이제 남은 것은 Counter를 자동으로 움직여 줄 박자, Clock뿐입니다.</p>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           Chapter 13. Clock Generator
+           ==================================================== -->
+      <section class="chapter" id="ch13" data-group="Project" data-title="Clock Generator" data-num="13">
+        <p class="chapter-label">CHAPTER 13</p>
+        <h2>Clock Generator</h2>
+
+        <div class="why-box">
+          <strong>왜 배우나요?</strong>
+          지금까지 데모에서는 사람이 Clock 버튼을 눌렀습니다. 진짜 카운터는 스스로 1초마다 숫자를 바꿔야 합니다. 일정한 박자를 자동으로 만드는 회로가 필요합니다.
+        </div>
+
+        <h3>Square Wave (구형파)</h3>
+        <p>Clock 신호는 HIGH와 LOW를 일정한 간격으로 반복하는 사각형 모양의 파형입니다.</p>
+        <div class="figure">
+          <svg class="square-wave-svg" viewBox="0 0 560 150" role="img" aria-label="Square wave: HIGH와 LOW를 반복하는 Clock 파형, 한 주기 T 표시">
+            <text x="0" y="34">HIGH</text>
+            <text x="0" y="104">LOW</text>
+            <path class="wave" d="M50,100 H90 V30 H170 V100 H250 V30 H330 V100 H410 V30 H490 V100 H540"/>
+            <line class="edge" x1="90" y1="18" x2="90" y2="112"/>
+            <line class="edge" x1="250" y1="18" x2="250" y2="112"/>
+            <line class="edge" x1="410" y1="18" x2="410" y2="112"/>
+            <text x="82" y="12">↑</text>
+            <text x="242" y="12">↑</text>
+            <text x="402" y="12">↑</text>
+            <path class="dim" d="M90,128 H250 M90,122 V134 M250,122 V134"/>
+            <text x="148" y="146">1 주기 (T)</text>
+          </svg>
+          <p class="figure-caption">점선은 Rising Edge(↑). Counter는 이 순간마다 1씩 증가합니다.</p>
+        </div>
+
+        <h3>Frequency (주파수)</h3>
+        <p>
+          1초 동안 이 파형이 몇 번 반복되는지를 <strong>주파수(frequency)</strong>라고 하고, 단위는 <strong>Hz(헤르츠)</strong>입니다.
+          한 번 반복하는 데 걸리는 시간은 <strong>주기(period, T)</strong>입니다.
+        </p>
+        <div class="formula">f = 1 / T
+
+1 Hz   →  T = 1 초      (1초에 1번)
+2 Hz   →  T = 0.5 초    (1초에 2번)
+0.5 Hz →  T = 2 초      (2초에 1번)</div>
+        <p>
+          따라서 <strong>1Hz Clock을 MOD-10 Counter에 연결하면 약 1초마다 숫자가 하나씩 증가</strong>합니다.
+          참고로 컴퓨터 CPU의 Clock은 수 GHz, 즉 1초에 수십억 번입니다.
+        </p>
+
+        <div class="demo">
+          <div class="demo-header"><span>Clock Generator 체험</span><span class="tag">INTERACTIVE</span></div>
+          <div class="demo-body">
+            <div class="controls">
+              <span class="control-label">주파수</span>
+              <div class="segmented" id="clk-freq">
+                <button class="btn" type="button" data-hz="0.5">0.5 Hz</button>
+                <button class="btn selected" type="button" data-hz="1">1 Hz</button>
+                <button class="btn" type="button" data-hz="2">2 Hz</button>
+              </div>
+              <button class="btn primary" id="clk-start" type="button">시작 ▶</button>
+            </div>
+            <div class="clock-demo" style="margin-top:18px">
+              <div class="clock-led" id="clk-led" aria-hidden="true"></div>
+              <div class="readout">
+                <div class="readout-item"><span class="readout-label">현재 Clock</span><span class="readout-value" id="clk-level">LOW</span></div>
+                <div class="readout-item"><span class="readout-label">주기 T</span><span class="readout-value" id="clk-period">1 s</span></div>
+                <div class="readout-item"><span class="readout-label">Rising Edge 횟수</span><span class="readout-value" id="clk-edges">0</span></div>
+              </div>
+            </div>
+            <p class="demo-hint">LED가 켜지는 순간이 Rising Edge입니다. Counter에 연결된다면, 이 순간마다 숫자가 1씩 올라갑니다.</p>
+          </div>
+        </div>
+
+        <h3>NE555 Timer로 Clock 만들기</h3>
+        <p>
+          실제 회로에서 가장 많이 쓰는 입문용 Clock 발생기는 <strong>NE555 Timer IC</strong>입니다.
+          555에 저항 2개와 커패시터 1개를 연결해 <strong>Astable(비안정) 모드</strong>로 동작시키면, 출력 핀에서 Square Wave가 계속 나옵니다.
+          커패시터가 충전·방전을 반복하면서 출력을 HIGH/LOW로 뒤집는 원리입니다.
+          저항이나 커패시터 값을 바꾸면 주파수가 바뀝니다.
+        </p>
+
+        <details class="optional">
+          <summary>555 주파수 공식 <span class="badge">선택 · 심화</span></summary>
+          <p>Astable 모드에서 저항 R1, R2와 커패시터 C를 쓰면 주파수는 대략 다음과 같습니다.</p>
+          <div class="formula">f ≈ 1.44 / ((R1 + 2·R2) · C)</div>
+          <p>예: R1 = 1kΩ, R2 = 68kΩ, C = 10µF → f ≈ 1.44 / (137,000 × 0.00001) ≈ 1.05 Hz (약 1초 주기)</p>
+          <p>내부 구조(비교기 2개, SR Latch, 방전 트랜지스터)는 이후 아날로그/전자회로 과목에서 다룹니다. 흥미롭게도 555 내부에도 Chapter 6의 SR Latch가 들어 있습니다.</p>
+        </details>
+
+        <div class="note">
+          더 정확한 시간이 필요하면 수정 발진자(Crystal Oscillator, 예: 32.768kHz)를 쓰고 Counter로 나누어 1Hz를 만듭니다. 손목시계가 이 방식입니다. T Flip-Flop 하나가 주파수를 절반으로 나눈다는 것(Chapter 7)을 떠올려 보세요. 32768 = 2¹⁵ 이므로 Flip-Flop 15개를 연결하면 정확히 1Hz가 됩니다.
+        </div>
+
+        <div class="connect-box" data-stage="Clock">
+          <div class="connect-box-title">최종 회로와 연결</div>
+          <p>Clock Generator는 최종 회로의 맨 앞에서 Counter에게 "지금 1 올려!"라는 신호를 1초마다 보냅니다. 이제 모든 블록이 준비되었습니다.</p>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           Chapter 14. Final Project
+           ==================================================== -->
+      <section class="chapter" id="ch14" data-group="Project" data-title="0~9 반복 Counter 완성" data-num="14">
+        <p class="chapter-label">CHAPTER 14 · FINAL PROJECT</p>
+        <h2>0~9 반복 7-Segment Counter</h2>
+
+        <p class="lead">
+          지금까지 만든 블록을 하나로 연결합니다. 각 블록을 누르면 해당 챕터로 이동합니다.
+        </p>
+
+        <div class="figure">
+          <div class="block-flow">
+            <a class="block-link" href="#ch13"><div class="block">Clock Generator<small>NE555 · 1 Hz Square Wave (Ch.13)</small></div></a>
+            <div class="flow-arrow"><span class="flow-label">CLK ↑</span></div>
+            <a class="block-link" href="#ch9"><div class="block">MOD-10 Counter<small>T Flip-Flop × 4 + AND Reset (Ch.6–9)</small></div></a>
+            <div class="flow-arrow"><span class="flow-label">BCD: D C B A</span></div>
+            <a class="block-link" href="#ch12"><div class="block">BCD → 7-Segment Decoder<small>조합 논리회로 · CD4511 (Ch.5, 12)</small></div></a>
+            <div class="flow-arrow"><span class="flow-label">a b c d e f g</span></div>
+            <a class="block-link" href="#ch11"><div class="block accent">7-Segment Display<small>Common Cathode (Ch.11)</small></div></a>
+          </div>
+        </div>
+
+        <div class="demo final-demo">
+          <div class="demo-header"><span>Final Demo — 데이터 흐름까지 보기</span><span class="tag">INTERACTIVE</span></div>
+          <div class="demo-body">
+            <div class="final-controls">
+              <div class="control-group">
+                <span class="control-label">Clock</span>
+                <button class="btn primary" id="final-manual" type="button">Manual ↑</button>
+                <button class="btn" id="final-auto" type="button">Auto ▶</button>
+                <button class="btn" id="final-reset" type="button">Reset</button>
+              </div>
+              <div class="control-group">
+                <span class="control-label">Speed</span>
+                <div class="segmented" id="final-speed">
+                  <button class="btn" type="button" data-ms="500">0.5 sec</button>
+                  <button class="btn selected" type="button" data-ms="1000">1 sec</button>
+                  <button class="btn" type="button" data-ms="2000">2 sec</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="dataflow">
+              <div class="flow-stage" id="final-stage-clock">
+                <span class="stage-name">① Clock</span>
+                <div class="clock-pin" id="final-clock-pin"></div>
+                <span class="mono" id="final-clock-count" style="font-size:12px">edge 0</span>
+                <a class="stage-chapter" href="#ch13">Ch.13</a>
+              </div>
+              <div class="flow-connector"><span class="arrow-h">→</span><span class="arrow-v" style="display:none">↓</span></div>
+              <div class="flow-stage" id="final-stage-counter">
+                <span class="stage-name">② MOD-10 Counter</span>
+                <div>
+                  <div class="bcd-bits" id="final-bits"></div>
+                  <div class="bcd-names"><span>D</span><span>C</span><span>B</span><span>A</span></div>
+                </div>
+                <span class="mono" id="final-bcd" style="font-size:12px">BCD 0000 = 0</span>
+                <a class="stage-chapter" href="#ch9">Ch.9–10</a>
+              </div>
+              <div class="flow-connector"><span class="arrow-h">→</span><span class="arrow-v" style="display:none">↓</span></div>
+              <div class="flow-stage" id="final-stage-decoder">
+                <span class="stage-name">③ Decoder</span>
+                <div class="segment-list" id="final-seglist"></div>
+                <a class="stage-chapter" href="#ch12">Ch.12</a>
+              </div>
+              <div class="flow-connector"><span class="arrow-h">→</span><span class="arrow-v" style="display:none">↓</span></div>
+              <div class="flow-stage" id="final-stage-display">
+                <span class="stage-name">④ 7-Segment</span>
+                <div class="seven-seg size-md" data-seven-seg id="final-display"></div>
+                <span class="mono" id="final-decimal" style="font-size:12px">Decimal = 0</span>
+                <a class="stage-chapter" href="#ch11">Ch.11</a>
+              </div>
+            </div>
+
+            <div style="margin-top:22px">
+              <div class="digit-loop" id="final-loop"></div>
+            </div>
+            <p class="status-line" id="final-status">Manual ↑을 누르거나 Auto ▶로 자동 실행해 보세요.</p>
+          </div>
+        </div>
+
+        <h3>한 번의 Clock에서 일어나는 일</h3>
+        <p>숫자가 4에서 5로 바뀌는 한 순간을 따라가 봅시다.</p>
+        <ol>
+          <li><strong>Clock Generator</strong>의 출력이 LOW → HIGH로 올라갑니다 (Rising Edge).</li>
+          <li><strong>Counter</strong> 안의 T Flip-Flop Q0이 toggle되어 <code>0100</code>이 <code>0101</code>이 됩니다. (만약 9에서 넘어가는 순간이었다면 <code>1010</code>이 되자마자 AND 게이트가 감지해 <code>0000</code>으로 Reset.)</li>
+          <li>4개의 전선 D C B A에 <code>0 1 0 1</code>, 즉 <strong>BCD 5</strong>가 실립니다.</li>
+          <li><strong>Decoder</strong>(조합 논리회로)가 입력 <code>0101</code>을 보고 즉시 <code>a=1 b=0 c=1 d=1 e=0 f=1 g=1</code>을 출력합니다.</li>
+          <li><strong>7-Segment</strong>의 a, c, d, f, g LED가 켜지고 화면에 <strong>5</strong>가 나타납니다.</li>
+          <li>다음 Rising Edge까지 Flip-Flop이 <code>0101</code>을 <strong>기억</strong>하고 있으므로 5가 계속 표시됩니다.</li>
+        </ol>
+
+        <h3>처음부터 다시 보면</h3>
+        <p>이 숫자 하나가 바뀌는 데, 이 교재의 모든 챕터가 사용되었습니다.</p>
+        <div class="table-wrap">
+          <table class="truth recap-table">
+            <thead><tr><th>배운 개념</th><th>최종 회로에서 쓰인 곳</th></tr></thead>
+            <tbody>
+              <tr><td class="text"><a href="#ch1">01 전압과 0/1</a></td><td class="text">모든 전선이 HIGH/LOW로 정보를 전달</td></tr>
+              <tr><td class="text"><a href="#ch2">02 이진수</a></td><td class="text">Counter가 현재 숫자를 4bit로 표현</td></tr>
+              <tr><td class="text"><a href="#ch3">03 Boolean Logic</a></td><td class="text">"10이 됐나?", "segment a를 켤까?"라는 판단 규칙</td></tr>
+              <tr><td class="text"><a href="#ch4">04 Logic Gates</a></td><td class="text">Reset용 AND 게이트, Decoder 내부의 AND/OR/NOT</td></tr>
+              <tr><td class="text"><a href="#ch5">05 조합 논리회로</a></td><td class="text">BCD → 7-Segment Decoder 전체</td></tr>
+              <tr><td class="text"><a href="#ch6">06 Latch</a></td><td class="text">Flip-Flop 안의 기억 구조 (feedback)</td></tr>
+              <tr><td class="text"><a href="#ch7">07 Flip-Flop &amp; Clock</a></td><td class="text">숫자 1bit씩을 박자에 맞춰 기억 (× 4개)</td></tr>
+              <tr><td class="text"><a href="#ch8">08 Binary Counter</a></td><td class="text">Flip-Flop 4개를 이어 +1씩 증가</td></tr>
+              <tr><td class="text"><a href="#ch9">09 MOD-10 Counter</a></td><td class="text">9 다음에 0으로 돌아가기</td></tr>
+              <tr><td class="text"><a href="#ch10">10 BCD</a></td><td class="text">Counter와 Decoder 사이의 공통 언어</td></tr>
+              <tr><td class="text"><a href="#ch11">11 7-Segment</a></td><td class="text">숫자를 사람 눈에 보이게 표시</td></tr>
+              <tr><td class="text"><a href="#ch12">12 Decoder</a></td><td class="text">4bit → 7개 segment 신호 번역</td></tr>
+              <tr><td class="text"><a href="#ch13">13 Clock Generator</a></td><td class="text">1초마다 자동으로 Counter를 움직임</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          처음에 배운 작은 AND 게이트 하나, 1bit를 붙잡는 feedback 고리 하나가 쌓이고 연결되어
+          <strong>0 → 1 → 2 → … → 9 → 0</strong>을 끝없이 반복하는 장치가 되었습니다.
+          디지털 시스템은 아무리 복잡해 보여도 결국 이런 블록들의 조합입니다.
+        </p>
+
+        <div class="note">
+          <span class="note-title">다음 단계로</span>
+          <ul>
+            <li><strong>두 자리 카운터 (00~99)</strong>: MOD-10 Counter의 9 → 0 순간을 다음 자리 Counter의 Clock으로 연결해 보세요(Carry).</li>
+            <li><strong>시계 만들기</strong>: 초는 MOD-60, 시는 MOD-24 (또는 12) Counter가 필요합니다.</li>
+            <li><strong>Karnaugh Map</strong>: Decoder의 segment 식을 최소한의 게이트로 줄이는 방법.</li>
+            <li><strong>실제 제작</strong>: NE555 + 74HC90(또는 CD4518) + CD4511 + Common Cathode 7-Segment로 브레드보드에서 직접 만들 수 있습니다.</li>
+          </ul>
+        </div>
+
+        <div class="connect-box" data-stage="all">
+          <div class="connect-box-title">최종 회로 완성</div>
+          <p>Clock → Counter → BCD → Decoder → 7-Segment. 모든 블록이 연결되었습니다. 축하합니다!</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
